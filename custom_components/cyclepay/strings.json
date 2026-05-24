@@ -1,7 +1,8 @@
 {
     "config": {
         "abort": {
-            "already_configured": "Account is already configured"
+            "already_configured": "Account is already configured",
+            "reauth_successful": "Re-authentication was successful"
         },
         "error": {
             "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
@@ -10,6 +11,14 @@
         },
         "step": {
             "user": {
+                "data": {
+                    "username": "[%key:common::config_flow::data::username%]",
+                    "password": "[%key:common::config_flow::data::password%]"
+                }
+            },
+            "reauth_confirm": {
+                "title": "Re-authenticate CyclePay",
+                "description": "Your CyclePay credentials are no longer valid. Please enter your username and password again.",
                 "data": {
                     "username": "[%key:common::config_flow::data::username%]",
                     "password": "[%key:common::config_flow::data::password%]"
