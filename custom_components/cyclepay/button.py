@@ -97,7 +97,7 @@ class BaseButton(ButtonEntity, CoordinatorEntity):  # type: ignore
             self.hass,
             msg,
             title="CyclePay Error",
-            notification_id="alarmcom_permission_error",
+            notification_id="cyclepay_error",
         )
 
         return False
@@ -215,7 +215,19 @@ class SwipeOnceButton(BaseButton):
             self._attr_available = True
             return
 
-        await self.laundry.async_vend(self.machine_id)
+        try:
+            await self.laundry.async_vend(self.machine_id)
+        except Exception:
+            log.exception(
+                "Error vending %s %s", self.machine.type.name.title(), self.machine.number
+            )
+            self._show_notification(
+                f"An error occurred while charging {self.machine.type.name.title()}"
+                f" {self.machine.number}. Your card may not have been charged."
+            )
+            return
+        finally:
+            self._attr_available = True
 
         await asyncio.sleep(5)
 
@@ -263,13 +275,29 @@ class SwipePreferredCycleButton(BaseButton):
             self._attr_available = True
             return
 
-        i = 0
-        while i < num_swipes:
-            # Ensures that the machine state doesn't update while we're vending.
-            self.hass.bus.async_fire(EVENT_VEND_BEGIN, {"machine_id": self.machine_id})
-
-            await self.laundry.async_vend(self.machine_id)
-            i += 1
+        try:
+            i = 0
+            while i < num_swipes:
+                # Keep sensors in "Vending" state between swipes.
+                self.hass.bus.async_fire(EVENT_VEND_BEGIN, {"machine_id": self.machine_id})
+                await self.laundry.async_vend(self.machine_id)
+                i += 1
+        except Exception:
+            log.exception(
+                "Error vending %s %s (swipe %d of %d)",
+                self.machine.type.name.title(),
+                self.machine.number,
+                i + 1,
+                num_swipes,
+            )
+            self._show_notification(
+                f"An error occurred on swipe {i + 1} of {num_swipes} for"
+                f" {self.machine.type.name.title()} {self.machine.number}."
+                " Previous swipes in this cycle may have been charged."
+            )
+            return
+        finally:
+            self._attr_available = True
 
         await asyncio.sleep(5)
 
