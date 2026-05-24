@@ -116,10 +116,14 @@ class BaseButton(ButtonEntity, CoordinatorEntity):  # type: ignore
     async def _can_vend(self, num_swipes: int) -> bool:
         """Determine whether card and machine are able to vend."""
 
-        # Fetch topoff data if we don't already have it.
+        # Always initialise so later references are never unbound.
+        topoff_data = None
+
+        # Fetch topoff data if we don't already have it cached on the machine object.
         if not self.machine.topoff_price or not self.machine.base_price:
             try:
-                # Use returned instance of topoff data. Update won't be reflected in self.laundry until next coordinator update.
+                # Use returned instance of topoff data. Update won't be reflected in
+                # self.laundry until next coordinator update.
                 topoff_data = await self.laundry.async_get_topoff_data(self.machine.id_)
             except MachineOffline:
                 return self._show_notification(
@@ -128,7 +132,7 @@ class BaseButton(ButtonEntity, CoordinatorEntity):  # type: ignore
                     " is not connected to CyclePay."
                 )
 
-        log.debug(topoff_data)
+        log.debug("Topoff data for machine %s: %s", self.machine.id_, topoff_data)
 
         # Make sure we received correct values. Topoff data can be unreliable.
         if not isinstance(self.machine.base_price, float) or (
@@ -146,23 +150,37 @@ class BaseButton(ButtonEntity, CoordinatorEntity):  # type: ignore
                 f"Cannot topoff {self.machine.type.name.title()} {self.machine.number} because it is not a dryer."
             )
 
+        topoff_price: float | None = topoff_data.get("price") if topoff_data else None
         vend_cost: float | None = None
 
-        # Calculate cost of vend.
+        # Calculate total cost of all vends.
+        # Multi-swipe cycle: 1 base swipe to start + (num_swipes - 1) topoff swipes.
         if num_swipes == 1 and self.machine.busy:
-            vend_cost = topoff_data.get("price")
+            # Machine already running: single topoff swipe.
+            vend_cost = topoff_price
         elif num_swipes == 1 and not self.machine.busy:
+            # Machine idle: single start swipe at base price.
             vend_cost = self.machine.base_price
         elif num_swipes > 1 and self.machine.busy:
-            vend_cost = self.machine.base_price - (topoff_data.get("price") * (num_swipes - 1))
-
-        if not vend_cost:
-            return self._show_notification(
-                f"""Cannot determine whether sufficient funds are available to vend {self.machine.type.name.title()} {self.machine.number}"""
-                """because cycle price could not be loaded."""
+            # Machine already running: all swipes are topoffs.
+            vend_cost = topoff_price * num_swipes if topoff_price is not None else None
+        elif num_swipes > 1 and not self.machine.busy:
+            # Machine idle: first swipe at base price, remaining at topoff price.
+            vend_cost = (
+                self.machine.base_price + (topoff_price * (num_swipes - 1))
+                if topoff_price is not None
+                else None
             )
 
-        card_balance = 0 if not self.laundry.profile.card_balance else self.laundry.profile.card_balance
+        # Guard against undetermined, zero, or negative cost.
+        if not isinstance(vend_cost, float) or vend_cost <= 0:
+            return self._show_notification(
+                f"Cannot determine whether sufficient funds are available to vend"
+                f" {self.machine.type.name.title()} {self.machine.number}"
+                " because cycle price could not be loaded."
+            )
+
+        card_balance: float = self.laundry.profile.card_balance or 0.0
 
         # Check if card has sufficient funds.
         if card_balance - vend_cost < 0:
@@ -246,7 +264,7 @@ class SwipePreferredCycleButton(BaseButton):
             return
 
         i = 0
-        while i <= num_swipes:
+        while i <= num_swipes:  # temporarily reverted for split commit
             # Ensures that the machine state doesn't update while we're vending.
             self.hass.bus.async_fire(EVENT_VEND_BEGIN, {"machine_id": self.machine_id})
 
