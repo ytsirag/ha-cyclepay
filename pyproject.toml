@@ -2,14 +2,14 @@
 name = "ha-cyclepay"
 version = "0.1.8"
 description = "Home Assistant custom integration for CyclePay (ESD/Hercules) laundry rooms"
-requires-python = ">=3.12"
+requires-python = ">=3.14.2"
 dependencies = [
     "pylaundry>=0.1.5",
 ]
 
 [dependency-groups]
 dev = [
-    "homeassistant>=2024.1",
+    "homeassistant>=2026.5.4",
     "pre-commit>=3.5.1",
 ]
 
@@ -23,12 +23,12 @@ packages = ["custom_components/cyclepay"]
 
 [tool.black]
 line-length = 115
-target-version = ["py312"]
+target-version = ["py314"]
 exclude = 'generated'
 preview = "True"
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.14"
 show_error_codes = true
 ignore_missing_imports = true
 color_output = true
@@ -57,7 +57,7 @@ norecursedirs = [".git", "testing_config"]
 asyncio_mode = "auto"
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py314"
 unfixable = [
   "F841" # Unused variables
 ]
