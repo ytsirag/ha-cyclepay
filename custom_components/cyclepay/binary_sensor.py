@@ -83,7 +83,11 @@ class MachineInUseSensor(BinarySensorEntity, CoordinatorEntity):  # type: ignore
     def update_device_data(self) -> None:
         """Update the entity when coordinator is updated."""
 
-        machine: LaundryMachine = self.laundry.machines.get(self._machine_id)
+        machine: LaundryMachine | None = self.laundry.machines.get(self._machine_id)
+
+        if machine is None:
+            self._attr_available = False
+            return
 
         self._attr_is_on = machine.busy if machine.online else None
 

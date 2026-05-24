@@ -130,7 +130,11 @@ class MachineMinutesRemainingSensor(SensorEntity, CoordinatorEntity):  # type: i
 
         self._attr_native_unit_of_measurement = "min"
 
-        machine: LaundryMachine = self.laundry.machines.get(self._machine_id)
+        machine: LaundryMachine | None = self.laundry.machines.get(self._machine_id)
+
+        if machine is None:
+            self._attr_available = False
+            return
 
         if machine.online:
             self._attr_native_value = machine.minutes_remaining if machine.minutes_remaining else 0
@@ -283,7 +287,11 @@ class AvailableMachines(SensorEntity, CoordinatorEntity):  # type: ignore
         )
 
         self._attr_extra_state_attributes = {
-            "as_percent": f"{round((self._attr_native_value / total_machines_in_room) * 100)}%",
+            "as_percent": (
+                f"{round((self._attr_native_value / total_machines_in_room) * 100)}%"
+                if total_machines_in_room > 0
+                else "N/A"
+            ),
             f"total_{self._machine_type.value.lower()}s_in_laundry_room": total_machines_in_room,
         }
 
