@@ -6,7 +6,7 @@ from datetime import timedelta
 
 import async_timeout
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.config_entries import device_registry as dr
+from homeassistant.helpers import device_registry as dr
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
