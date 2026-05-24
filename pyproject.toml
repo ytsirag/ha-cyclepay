@@ -1,17 +1,35 @@
+[project]
+name = "ha-cyclepay"
+version = "0.1.8"
+description = "Home Assistant custom integration for CyclePay (ESD/Hercules) laundry rooms"
+requires-python = ">=3.12"
+dependencies = [
+    "pylaundry>=0.1.5",
+]
+
+[dependency-groups]
+dev = [
+    "homeassistant>=2024.1",
+    "pre-commit>=3.5.1",
+]
+
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# Installs the custom_components/cyclepay package into the wheel.
+packages = ["custom_components/cyclepay"]
 
 [tool.black]
 line-length = 115
-target-version = ["py310"]
+target-version = ["py312"]
 exclude = 'generated'
 preview = "True"
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.12"
 show_error_codes = true
-# follow_imports = "silent"
 ignore_missing_imports = true
 color_output = true
 strict_equality = true
@@ -39,7 +57,7 @@ norecursedirs = [".git", "testing_config"]
 asyncio_mode = "auto"
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py312"
 unfixable = [
   "F841" # Unused variables
 ]
@@ -54,13 +72,12 @@ select = [
   "I", # isort
   "PL", # pylint
   "RUF", # ruff-specific
-  # "FA", # flake-8 future annotations
   "TID", # flake-8 tidy imports
   "SLF", # flake-8 self
   "SIM", # flake-8 simplify
-  "ICN001", # import concentions; {name} should be imported as {asname}
+  "ICN001", # import conventions; {name} should be imported as {asname}
   "PGH004", # Use specific rule codes when using noqa
-  "PLC0414", # Useless import alias. Import alias does not rename original package.
+  "PLC0414", # Useless import alias
   "RET", # flake-8 return
   "S", # Bandit
   "T20", # flake8-print
@@ -82,10 +99,10 @@ ignore = [
   "PLR0912", # Too many branches
   "PLR0915", # Too many statements
   "PLR0913", # Too many arguments in a function call
-  "PLR2004", # Magic values. Often triggered by aiohttp response status check.
+  "PLR2004", # Magic values
   "PLR0911", # Too many return statements
-  "TRY301", # Avoid raising withing a try block
-  "UP006", # Along with UP007, make up pyupgrade's keep-runtime-typing
+  "TRY301", # Avoid raising within a try block
+  "UP006", # keep-runtime-typing (with UP007)
   "UP007"
 ]
 
