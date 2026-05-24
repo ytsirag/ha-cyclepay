@@ -264,7 +264,7 @@ class SwipePreferredCycleButton(BaseButton):
             return
 
         i = 0
-        while i <= num_swipes:  # temporarily reverted for split commit
+        while i < num_swipes:
             # Ensures that the machine state doesn't update while we're vending.
             self.hass.bus.async_fire(EVENT_VEND_BEGIN, {"machine_id": self.machine_id})
 
